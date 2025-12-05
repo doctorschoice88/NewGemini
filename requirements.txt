@@ -1,3 +1,5 @@
 streamlit
 google-generativeai
 yfinance
+pandas_ta
+pandas
