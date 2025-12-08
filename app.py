@@ -26,7 +26,7 @@ import datetime
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Superb Pro AI (1.5 Pro)",
+    page_title="Superb Pro AI (1.5 flash)",
     page_icon="🧠",
     layout="wide"
 )
@@ -51,7 +51,7 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: Gemini 1.5 Pro (Latest)")
+    st.caption("Model: Gemini 1.5 flash (Latest)")
     
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
@@ -125,12 +125,12 @@ if price:
     if mood == "PANIC":
         st.error("⚠️ HIGH ALERT: EMOTIONS UNSTABLE. DO NOT TRADE.")
 
-# --- AI BRAIN (GEMINI 1.5 PRO) ---
+# --- AI BRAIN (GEMINI 1.5 flash) ---
 if api_key:
     genai.configure(api_key=api_key)
     
     sys_prompt = (
-        "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini 2.5 Pro intelligence. "
+        "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini intelligence. "
         "You speak in Hinglish (Brotherly tone). "
         f"Analyze this Live Data:\n{context}\n"
         "1. If VIX is high (>15) or User Mood is PANIC, your ONLY goal is to calm them down. No trade setups.\n"
@@ -138,9 +138,9 @@ if api_key:
         "3. Be direct. Use short sentences. No generic advice."
     )
     
-    # USING THE LATEST 1.5 PRO MODEL
+    # USING THE LATEST 1.5 flash MODEL
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro", 
+        model_name="gemini-1.5-flash", 
         generation_config={"temperature": 0.3},
         system_instruction=sys_prompt
     )
