@@ -132,7 +132,7 @@ if price:
 else:
     st.warning("Live market data load nahi ho paya. AI phir bhi chat ke liye ready hai.")
 
-# --- AI BRAIN (Gemini 2.5 Flash) ---
+# --- AI BRAIN (Gemini 2.5 Flash / Pro Toggle) ---
 if api_key:
     client = genai.Client(api_key=api_key)
 
@@ -141,62 +141,59 @@ if api_key:
         "You speak in Hinglish (Brotherly tone). "
         f"Analyze this Live Data:\n{context}\n"
         "Rules:\n"
-        "1. If VIX is high (>15) OR User Mood is PANIC, your ONLY goal is to calm them down. No trade setups.\n"
-        "2. If Mood is STABLE/CONFIDENT and VIX < 15, give Nifty intraday levels using Pivots/RSI.\n"
-        "3. Be direct. Use short sentences. No generic gyaan. Focused, brother-to-brother tone.\n"
+        "1. If VIX is high (>15) OR User Mood is PANIC → Only calm the user, no trades.\n"
+        "2. If Mood is STABLE/CONFIDENT and VIX < 15 → Give intraday Nifty levels.\n"
+        "3. Short sentences, direct tone, no gyaan.\n"
     )
 
-    # Chat history init
+    # Chat history
     if "messages" not in st.session_state:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": "System upgraded to Gemini 2.5 Flash. Data online. Bol bhai, kya scene hai?"
+                "content": f"System booted on **{model_name}**. Bol bhai, kya scene hai?"
             }
         ]
 
-    # Show old messages
+    # Display old msgs
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # User input
+    # Input
     if prompt := st.chat_input("Command..."):
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         with st.chat_message("user"):
             st.markdown(prompt)
 
         try:
-            # Conversation ko plain text me convert karo
-            conv_text = ""
+            # Combine chat history
+            conv = ""
             for m in st.session_state.messages:
                 role = "User" if m["role"] == "user" else "Assistant"
-                conv_text += f"{role}: {m['content']}\n"
+                conv += f"{role}: {m['content']}\n"
 
-            # Gemini 2.5 Flash call
+            # ⚡ MODEL TOGGLE HERE
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=conv_text,
+                model=model_name,     # <-- FLASH or PRO based on user selection
+                contents=conv,
                 config=types.GenerateContentConfig(
                     temperature=0.3,
                     system_instruction=sys_prompt
                 ),
             )
 
-            full_res = response.text
+            final = response.text
 
             with st.chat_message("assistant"):
-                st.markdown(full_res)
+                st.markdown(final)
 
             st.session_state.messages.append(
-                {"role": "assistant", "content": full_res}
+                {"role": "assistant", "content": final}
             )
 
         except Exception as e:
             import traceback
             st.error(f"Error: {type(e).__name__}: {e}")
             st.code(traceback.format_exc())
-else:
-    st.info("Sidebar me Gemini API key daal pehle, phir hi AI BRAIN active hoga.")
