@@ -26,7 +26,7 @@ import datetime
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Superb Pro AI (1.5 flash)",
+    page_title="Superb Pro AI (Gemini-pro)",
     page_icon="🧠",
     layout="wide"
 )
@@ -51,7 +51,7 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: Gemini 1.5 flash (Latest)")
+    st.caption("Model: Gemini-pro (Latest)")
     
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
@@ -113,7 +113,7 @@ def get_data():
         return None, None, None, "Error fetching data"
 
 # --- UI LAYER ---
-st.title("⚡ SUPERB PRO AI 1.5")
+st.title("⚡ SUPERB PRO AI Gemini-pro")
 price, vix, rsi, context = get_data()
 
 if price:
@@ -125,12 +125,12 @@ if price:
     if mood == "PANIC":
         st.error("⚠️ HIGH ALERT: EMOTIONS UNSTABLE. DO NOT TRADE.")
 
-# --- AI BRAIN (GEMINI 1.5 flash) ---
+# --- AI BRAIN (Gemini-pro) ---
 if api_key:
     genai.configure(api_key=api_key)
     
     sys_prompt = (
-        "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini intelligence. "
+        "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini-pro. "
         "You speak in Hinglish (Brotherly tone). "
         f"Analyze this Live Data:\n{context}\n"
         "1. If VIX is high (>15) or User Mood is PANIC, your ONLY goal is to calm them down. No trade setups.\n"
@@ -138,15 +138,15 @@ if api_key:
         "3. Be direct. Use short sentences. No generic advice."
     )
     
-    # USING THE LATEST 1.5 flash MODEL
+    # USING THE LATEST Gemini-pro MODEL
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash", 
+        model_name="Gemini-pro", 
         generation_config={"temperature": 0.3},
         system_instruction=sys_prompt
     )
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "model", "content": "System upgraded to Gemini 2.5 Pro. Data online. Bol Bhai, kya scene hai?"}]
+        st.session_state.messages = [{"role": "model", "content": "System upgraded to Gemini Pro. Data online. Bol Bhai, kya scene hai?"}]
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
