@@ -127,7 +127,7 @@ if price:
 
 # --- AI BRAIN (gemini-1.5-flash) ---
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     
     sys_prompt = (
         "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini-pro. "
