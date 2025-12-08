@@ -1,4 +1,10 @@
 import streamlit as st
+from google import genai
+from google.genai import types
+import yfinance as yf
+import pandas_ta as ta
+import pandas as pd
+import datetime
 
 # --- PASSWORD KA TAALA ---
 if "authenticated" not in st.session_state:
@@ -10,23 +16,16 @@ if not st.session_state.authenticated:
     password = st.text_input("Enter Password:", type="password")
     
     if st.button("Login"):
-        if password == st.secrets["APP_PASSWORD"]:  # Secret se match karega
+        if "APP_PASSWORD" in st.secrets and password == st.secrets["APP_PASSWORD"]:
             st.session_state.authenticated = True
             st.rerun()
         else:
             st.error("Galat Password! Hatt!")
     st.stop()  # Yahin rok dega agar password nahi mila
 
-import streamlit as st
-import yfinance as yf
-import pandas_ta as ta
-import pandas as pd
-from google import genai
-from google.genai import types
-
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Superb Pro AI (gemini-1.5-flash)",
+    page_title="Superb Pro AI (Gemini 2.5 Flash)",
     page_icon="🧠",
     layout="wide"
 )
@@ -51,8 +50,9 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: gemini-1.5-flash (Latest)")
-    
+    st.caption("Model: gemini-2.5-flash (Latest)")
+
+    # API KEY
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
         st.success("ACCESS GRANTED")
@@ -62,7 +62,10 @@ with st.sidebar:
     st.divider()
     
     # Mood Slider
-    mood = st.select_slider("CURRENT MENTAL STATE", options=["PANIC", "ANXIOUS", "STABLE", "CONFIDENT", "EUPHORIC/GREEDY"])
+    mood = st.select_slider(
+        "CURRENT MENTAL STATE",
+        options=["PANIC", "ANXIOUS", "STABLE", "CONFIDENT", "EUPHORIC/GREEDY"]
+    )
     
     if st.button("🔴 RESET SYSTEM"):
         st.session_state.messages = []
@@ -78,7 +81,8 @@ def get_data():
         vix = yf.Ticker("^INDIAVIX")
         vix_hist = vix.history(period="5d")
         
-        if hist.empty: return None, "NO DATA"
+        if hist.empty:
+            return None, None, None, "NO DATA"
 
         # Price Action
         price = hist['Close'].iloc[-1]
@@ -93,7 +97,7 @@ def get_data():
         rsi = hist['RSI'].iloc[-1]
         trend = "BULLISH" if price > hist['EMA_20'].iloc[-1] else "BEARISH"
         
-        # Pivots
+        # Pivots (previous candle)
         h, l, c = hist['High'].iloc[-2], hist['Low'].iloc[-2], hist['Close'].iloc[-2]
         p = (h + l + c) / 3
         r1 = (2 * p) - l
@@ -109,11 +113,12 @@ def get_data():
             f"USER MOOD: {mood}\n"
         )
         return price, vix_val, rsi, context
-    except:
-        return None, None, None, "Error fetching data"
+    except Exception as e:
+        return None, None, None, f"Error fetching data: {e}"
 
 # --- UI LAYER ---
-st.title("⚡ SUPERB PRO AI gemini-1.5-flash ")
+st.title("⚡ SUPERB PRO AI – Gemini 2.5 Flash")
+
 price, vix, rsi, context = get_data()
 
 if price:
@@ -124,50 +129,74 @@ if price:
 
     if mood == "PANIC":
         st.error("⚠️ HIGH ALERT: EMOTIONS UNSTABLE. DO NOT TRADE.")
+else:
+    st.warning("Live market data load nahi ho paya. AI phir bhi chat ke liye ready hai.")
 
-# --- AI BRAIN (gemini-1.5-flash) ---
+# --- AI BRAIN (Gemini 2.5 Flash) ---
 if api_key:
     client = genai.Client(api_key=api_key)
-    
+
     sys_prompt = (
-        "You are 'Superb Pro', an elite Trading Psychologist & Analyst using Gemini-pro. "
+        "You are 'Superb Pro', an elite Trading Psychologist & Analyst. "
         "You speak in Hinglish (Brotherly tone). "
         f"Analyze this Live Data:\n{context}\n"
-        "1. If VIX is high (>15) or User Mood is PANIC, your ONLY goal is to calm them down. No trade setups.\n"
-        "2. If Stable, give Nifty levels based on Pivots/RSI.\n"
-        "3. Be direct. Use short sentences. No generic advice."
-    )
-    
-    # USING THE LATEST gemini-1.5-flash MODEL
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash", 
-        generation_config={"temperature": 0.3},
-        system_instruction=sys_prompt
+        "Rules:\n"
+        "1. If VIX is high (>15) OR User Mood is PANIC, your ONLY goal is to calm them down. No trade setups.\n"
+        "2. If Mood is STABLE/CONFIDENT and VIX < 15, give Nifty intraday levels using Pivots/RSI.\n"
+        "3. Be direct. Use short sentences. No generic gyaan. Focused, brother-to-brother tone.\n"
     )
 
+    # Chat history init
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "model", "content": "System upgraded to Gemini Pro. Data online. Bol Bhai, kya scene hai?"}]
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "System upgraded to Gemini 2.5 Flash. Data online. Bol bhai, kya scene hai?"
+            }
+        ]
 
+    # Show old messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+    # User input
     if prompt := st.chat_input("Command..."):
+        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
+
         with st.chat_message("user"):
             st.markdown(prompt)
-            
-        with st.chat_message("assistant"):
-            try:
-                chat = model.start_chat(history=[{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages[:-1]])
-                response = chat.send_message(prompt, stream=True)
-                full_res = ""
-                holder = st.empty()
-                for chunk in response:
-                    if chunk.text:
-                        full_res += chunk.text
-                        holder.markdown(full_res + "▌")
-                holder.markdown(full_res)
-                st.session_state.messages.append({"role": "model", "content": full_res})
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
+
+        try:
+            # Conversation ko plain text me convert karo
+            conv_text = ""
+            for m in st.session_state.messages:
+                role = "User" if m["role"] == "user" else "Assistant"
+                conv_text += f"{role}: {m['content']}\n"
+
+            # Gemini 2.5 Flash call
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=conv_text,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    system_instruction=sys_prompt
+                ),
+            )
+
+            full_res = response.text
+
+            with st.chat_message("assistant"):
+                st.markdown(full_res)
+
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_res}
+            )
+
+        except Exception as e:
+            import traceback
+            st.error(f"Error: {type(e).__name__}: {e}")
+            st.code(traceback.format_exc())
+else:
+    st.info("Sidebar me Gemini API key daal pehle, phir hi AI BRAIN active hoga.")
