@@ -1,96 +1,3 @@
-import streamlit as st
-import google.generativeai as genai
-import yfinance as yf
-import pandas_ta as ta
-
-# --- PAGE SETUP ---
-st.set_page_config(page_title="Superb Pro AI", page_icon="⚡", layout="wide")
-
-# --- CONTROL ROOM ---
-with st.sidebar:
-    st.title("🎛️ SYSTEM CONTROL")
-    if "GEMINI_API_KEY" in st.secrets:
-        api_key = st.secrets["GEMINI_API_KEY"]
-        st.success("Key Found ✅")
-    else:
-        api_key = st.text_input("Enter API Key", type="password")
-
-    if st.button("Reboot Memory"):
-        st.session_state.messages = []
-        st.rerun()
-
-# --- INTELLIGENT MODEL SELECTOR ---
-def get_working_model():
-    # List of models to try in order of priority
-    priority_models = [
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-001",
-        "gemini-1.5-flash-latest",
-        "gemini-pro"
-    ]
-    
-    # Check what is actually available on this key
-    try:
-        available_models = [m.name.replace("models/", "") for m in genai.list_models()]
-        
-        # Try to find a match
-        for model in priority_models:
-            if model in available_models:
-                return model
-        
-        # If no priority match, pick the first 'generateContent' model
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                return m.name.replace("models/", "")
-                
-    except Exception as e:
-        return "gemini-1.5-flash" # Fallback blind try
-
-    return "gemini-1.5-flash"
-
-# --- MAIN LOGIC ---
-if api_key:
-    try:
-        genai.configure(api_key=api_key)
-        
-        # Auto-select the best working model
-        active_model_name = get_working_model()
-        
-        # Setup Model
-        model = genai.GenerativeModel(
-            model_name=active_model_name,
-            system_instruction="You are a Pro Trader & Brother. Speak in Hinglish. Keep answers short and direct."
-        )
-        
-        st.caption(f"🚀 Connected to Engine: **{active_model_name}**")
-
-        # Chat Interface
-        if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "model", "content": "System Online. Bol Bhai?"}]
-
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        if prompt := st.chat_input("Command..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            with st.chat_message("assistant"):
-                try:
-                    chat = model.start_chat(history=[{"role": m["role"], "parts": [m["content"]]} for m in st.session_state.messages[:-1]])
-                    response = chat.send_message(prompt)
-                    st.markdown(response.text)
-                    st.session_state.messages.append({"role": "model", "content": response.text})
-                except Exception as e:
-                    st.error(f"Chat Error: {str(e)}")
-
-    except Exception as e:
-        st.error(f"CRITICAL SYSTEM FAILURE: {str(e)}")
-else:
-    st.warning("Please enter API Key.")import streamlit as st
-
 # --- PASSWORD KA TAALA ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -113,7 +20,6 @@ import google.generativeai as genai
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
-import datetime
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
