@@ -26,7 +26,7 @@ import datetime
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Superb Pro AI (2.5 Pro)",
+    page_title="Superb Pro AI (3.1 Pro)",
     page_icon="🧠",
     layout="wide"
 )
@@ -51,7 +51,7 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: Gemini 2.5 Pro (Latest)")
+    st.caption("Model: Gemini 3.1 Pro (Latest)")
     
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
