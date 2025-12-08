@@ -113,7 +113,7 @@ def get_data():
         return None, None, None, "Error fetching data"
 
 # --- UI LAYER ---
-st.title("⚡ SUPERB PRO AI 2.5")
+st.title("⚡ SUPERB PRO AI 3")
 price, vix, rsi, context = get_data()
 
 if price:
@@ -125,7 +125,7 @@ if price:
     if mood == "PANIC":
         st.error("⚠️ HIGH ALERT: EMOTIONS UNSTABLE. DO NOT TRADE.")
 
-# --- AI BRAIN (GEMINI 2.5 PRO) ---
+# --- AI BRAIN (GEMINI 3 PRO) ---
 if api_key:
     genai.configure(api_key=api_key)
     
@@ -138,9 +138,9 @@ if api_key:
         "3. Be direct. Use short sentences. No generic advice."
     )
     
-    # USING THE LATEST 2.5 PRO MODEL
+    # USING THE LATEST 3 PRO MODEL
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-pro", 
+        model_name="gemini-3-pro", 
         generation_config={"temperature": 0.3},
         system_instruction=sys_prompt
     )
