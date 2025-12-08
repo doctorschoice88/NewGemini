@@ -6,29 +6,28 @@ import pandas_ta as ta
 import pandas as pd
 import datetime
 
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="Superb Pro AI (Gemini 2.5)",
+    page_icon="🧠",
+    layout="wide"
+)
+
 # --- PASSWORD KA TAALA ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
-# Agar login nahi hai, toh password maango
 if not st.session_state.authenticated:
     st.title("🔒 SUPERB PRO AI (Secured)")
     password = st.text_input("Enter Password:", type="password")
-    
+
     if st.button("Login"):
         if "APP_PASSWORD" in st.secrets and password == st.secrets["APP_PASSWORD"]:
             st.session_state.authenticated = True
             st.rerun()
         else:
             st.error("Galat Password! Hatt!")
-    st.stop()  # Yahin rok dega agar password nahi mila
-
-# --- PAGE CONFIGURATION ---
-st.set_page_config(
-    page_title="Superb Pro AI (Gemini 2.5 Flash)",
-    page_icon="🧠",
-    layout="wide"
-)
+    st.stop()
 
 # --- CUSTOM CSS (Ultra Dark Theme) ---
 st.markdown("""
@@ -50,23 +49,31 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: gemini-2.5-flash (Latest)")
+    st.caption("Gemini Trading Brain")
 
-    # API KEY
+    # API Key handling
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
-        st.success("ACCESS GRANTED")
+        st.success("ACCESS GRANTED (secrets file)")
     else:
-        api_key = st.text_input("ENTER API KEY", type="password")
+        api_key = st.text_input("ENTER GEMINI API KEY", type="password")
 
     st.divider()
-    
-    # Mood Slider
+
+    # Model toggle
+    model_name = st.selectbox(
+        "CHOOSE GEMINI MODEL",
+        ["gemini-2.5-flash", "gemini-2.5-pro"],
+        index=0
+    )
+
+    # Mood slider
     mood = st.select_slider(
         "CURRENT MENTAL STATE",
         options=["PANIC", "ANXIOUS", "STABLE", "CONFIDENT", "EUPHORIC/GREEDY"]
     )
-    
+
+    # Reset chat
     if st.button("🔴 RESET SYSTEM"):
         st.session_state.messages = []
         st.rerun()
@@ -77,32 +84,32 @@ def get_data():
         # Nifty & VIX
         nifty = yf.Ticker("^NSEI")
         hist = nifty.history(period="1mo")
-        
+
         vix = yf.Ticker("^INDIAVIX")
         vix_hist = vix.history(period="5d")
-        
+
         if hist.empty:
             return None, None, None, "NO DATA"
 
-        # Price Action
-        price = hist['Close'].iloc[-1]
-        change = price - hist['Close'].iloc[-2]
-        
-        vix_val = vix_hist['Close'].iloc[-1] if not vix_hist.empty else 0
-        
+        # Price action
+        price = hist["Close"].iloc[-1]
+        change = price - hist["Close"].iloc[-2]
+
+        vix_val = vix_hist["Close"].iloc[-1] if not vix_hist.empty else 0
+
         # Indicators
-        hist['RSI'] = ta.rsi(hist['Close'], length=14)
-        hist['EMA_20'] = ta.ema(hist['Close'], length=20)
-        
-        rsi = hist['RSI'].iloc[-1]
-        trend = "BULLISH" if price > hist['EMA_20'].iloc[-1] else "BEARISH"
-        
-        # Pivots (previous candle)
-        h, l, c = hist['High'].iloc[-2], hist['Low'].iloc[-2], hist['Close'].iloc[-2]
+        hist["RSI"] = ta.rsi(hist["Close"], length=14)
+        hist["EMA_20"] = ta.ema(hist["Close"], length=20)
+
+        rsi = hist["RSI"].iloc[-1]
+        trend = "BULLISH" if price > hist["EMA_20"].iloc[-1] else "BEARISH"
+
+        # Pivots (previous day)
+        h, l, c = hist["High"].iloc[-2], hist["Low"].iloc[-2], hist["Close"].iloc[-2]
         p = (h + l + c) / 3
         r1 = (2 * p) - l
         s1 = (2 * p) - h
-        
+
         context = (
             f"REAL-TIME DATA:\n"
             f"NIFTY: {price:.2f} (Change: {change:.2f})\n"
@@ -112,12 +119,13 @@ def get_data():
             f"SUPPORTS: S1 {s1:.0f} | RESISTANCE: R1 {r1:.0f}\n"
             f"USER MOOD: {mood}\n"
         )
+
         return price, vix_val, rsi, context
     except Exception as e:
         return None, None, None, f"Error fetching data: {e}"
 
-# --- UI LAYER ---
-st.title("⚡ SUPERB PRO AI – Gemini 2.5 Flash")
+# --- MAIN UI ---
+st.title("⚡ SUPERB PRO AI – Gemini 2.5 Flash / Pro")
 
 price, vix, rsi, context = get_data()
 
@@ -132,68 +140,71 @@ if price:
 else:
     st.warning("Live market data load nahi ho paya. AI phir bhi chat ke liye ready hai.")
 
-# --- AI BRAIN (Gemini 2.5 Flash / Pro Toggle) ---
+# --- AI BRAIN (Gemini 2.5) ---
 if api_key:
     client = genai.Client(api_key=api_key)
 
     sys_prompt = (
         "You are 'Superb Pro', an elite Trading Psychologist & Analyst. "
-        "You speak in Hinglish (Brotherly tone). "
+        "You speak in Hinglish (brotherly tone). "
         f"Analyze this Live Data:\n{context}\n"
         "Rules:\n"
         "1. If VIX is high (>15) OR User Mood is PANIC → Only calm the user, no trades.\n"
-        "2. If Mood is STABLE/CONFIDENT and VIX < 15 → Give intraday Nifty levels.\n"
-        "3. Short sentences, direct tone, no gyaan.\n"
+        "2. If Mood is STABLE/CONFIDENT and VIX < 15 → Give clear intraday Nifty levels using pivots & RSI.\n"
+        "3. Short sentences, direct tone, no generic gyaan. Act like a caring but strict trading brother.\n"
     )
 
-    # Chat history
+    # Init chat history
     if "messages" not in st.session_state:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": f"System booted on **{model_name}**. Bol bhai, kya scene hai?"
+                "content": f"System booted on **{model_name}**. Data online. Bol bhai, kya scene hai?"
             }
         ]
 
-    # Display old msgs
+    # Show old messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Input
+    # New user input
     if prompt := st.chat_input("Command..."):
+        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         with st.chat_message("user"):
             st.markdown(prompt)
 
         try:
-            # Combine chat history
-            conv = ""
+            # Conversation ko plain text me convert karo
+            conv_text = ""
             for m in st.session_state.messages:
                 role = "User" if m["role"] == "user" else "Assistant"
-                conv += f"{role}: {m['content']}\n"
+                conv_text += f"{role}: {m['content']}\n"
 
-            # ⚡ MODEL TOGGLE HERE
+            # Gemini call with toggle model
             response = client.models.generate_content(
-                model=model_name,     # <-- FLASH or PRO based on user selection
-                contents=conv,
+                model=model_name,  # "gemini-2.5-flash" ya "gemini-2.5-pro"
+                contents=conv_text,
                 config=types.GenerateContentConfig(
                     temperature=0.3,
-                    system_instruction=sys_prompt
+                    system_instruction=sys_prompt,
                 ),
             )
 
-            final = response.text
+            full_res = response.text
 
             with st.chat_message("assistant"):
-                st.markdown(final)
+                st.markdown(full_res)
 
             st.session_state.messages.append(
-                {"role": "assistant", "content": final}
+                {"role": "assistant", "content": full_res}
             )
 
         except Exception as e:
             import traceback
             st.error(f"Error: {type(e).__name__}: {e}")
             st.code(traceback.format_exc())
+else:
+    st.info("Sidebar me Gemini API key daal pehle, phir hi AI Brain active hoga.")
