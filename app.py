@@ -26,7 +26,7 @@ import datetime
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Superb Pro AI (3 Pro)",
+    page_title="Superb Pro AI (1.5 Pro)",
     page_icon="🧠",
     layout="wide"
 )
@@ -51,7 +51,7 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🎛️ SYSTEM CONTROL")
-    st.caption("Model: Gemini 3 Pro (Latest)")
+    st.caption("Model: Gemini 1.5 Pro (Latest)")
     
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
@@ -113,7 +113,7 @@ def get_data():
         return None, None, None, "Error fetching data"
 
 # --- UI LAYER ---
-st.title("⚡ SUPERB PRO AI 3")
+st.title("⚡ SUPERB PRO AI 1.5")
 price, vix, rsi, context = get_data()
 
 if price:
@@ -125,7 +125,7 @@ if price:
     if mood == "PANIC":
         st.error("⚠️ HIGH ALERT: EMOTIONS UNSTABLE. DO NOT TRADE.")
 
-# --- AI BRAIN (GEMINI 3 PRO) ---
+# --- AI BRAIN (GEMINI 1.5 PRO) ---
 if api_key:
     genai.configure(api_key=api_key)
     
@@ -138,9 +138,9 @@ if api_key:
         "3. Be direct. Use short sentences. No generic advice."
     )
     
-    # USING THE LATEST 3 PRO MODEL
+    # USING THE LATEST 1.5 PRO MODEL
     model = genai.GenerativeModel(
-        model_name="gemini-3-pro", 
+        model_name="gemini-1.5-pro", 
         generation_config={"temperature": 0.3},
         system_instruction=sys_prompt
     )
