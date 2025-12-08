@@ -18,11 +18,11 @@ if not st.session_state.authenticated:
     st.stop()  # Yahin rok dega agar password nahi mila
 
 import streamlit as st
-import from google import genai
-from google.genai import types
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+from google import genai
+from google.genai import types
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
